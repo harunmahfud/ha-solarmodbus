@@ -86,12 +86,12 @@ parameters:
       registers: [0x0060,0x0061]
       icon: 'mdi:solar-power'
 
-    - name: "Micro-inverter Power"
+    - name: "AUX Port Power"
       class: "power"
       state_class: "measurement"
       uom: "W"
       scale: 1
-      rule: 1
+      rule: 2
       registers: [0x00A6]
       icon: 'mdi:solar-power'
 
@@ -378,19 +378,17 @@ parameters:
       registers: [0x0055,0x0056]
       icon: 'mdi:lightning-bolt-outline'
 
-    - name: "SmartLoad Enable Status"
+    # Register 0x00C3 is a model-dependent AUX/alternator status bitfield, not
+    # the 0/1 SmartLoad flag previously declared here. Preserve it only as a
+    # diagnostic raw value until its SM2-P bits are validated independently.
+    - name: "AUX Status Raw"
       class: ""
-      state_class: ""      
+      state_class: ""
       uom: ""
       scale: 1
       rule: 1
       registers: [0x00C3]
-      isstr: true
-      lookup: 
-      -  key: 0
-         value: "OFF"
-      -  key: 1
-         value: "ON"
+      category: "diagnostic"
       icon: 'mdi:lightning-bolt-outline'
 
  - group: Inverter
@@ -540,28 +538,6 @@ parameters:
          value: "Off-Grid"
       -  key: 1
          value: "On-Grid"
-
-    - name: "Gen-connected Status"
-      class: ""
-      uom: ""
-      state_class: ""      
-      scale: 1
-      rule: 1
-      registers: [0x00A6]
-      isstr: true
-      lookup: 
-      -  key: 0
-         value: "none"
-      -  key: 1
-         value: "On"
-
-    - name: "Gen Power"
-      class: "power"
-      state_class: "measurement"      
-      uom: "W"
-      scale: 1
-      rule: 1
-      registers: [0x00A6]
 
  - group: Alert
    items: 
