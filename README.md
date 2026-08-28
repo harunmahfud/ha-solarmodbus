@@ -94,6 +94,13 @@ The duplicate **Micro-inverter Power**, **Gen Power**, and invalid
 **SmartLoad Enable Status** is replaced by the diagnostic **AUX Status Raw**.
 Update dashboards or automations that referenced the removed entity IDs.
 
+The EU profile no longer exposes the unused split-phase/L2 entities, which
+returned zero on the single-phase SM2-P. **Total Grid Production** is renamed
+to the register map's **Total Active Energy**, and ambiguous **Total Power** is
+renamed **Inverter Output Power**. TOU grid/generator charge entities retain
+their names but now inspect only the documented low two source bits, so other
+mode flags no longer corrupt their state.
+
 ### SG05LP1 SM2-P compatibility
 
 The core telemetry and energy registers in
@@ -103,6 +110,12 @@ Assistant config entries store it and the loader has no profile inheritance;
 renaming it or adding a full duplicate would either break existing entries or
 create two definitions that can drift. Model-dependent AUX/SmartLoad status
 remains a raw diagnostic value until its individual bits are verified.
+
+The profile's three FC03 ranges are inclusive, cover every referenced
+register, and remain within the 125-register Modbus limit: 3–112 (110),
+150–249 (100), and 250–279 (30). The SM2-P hardware returned TOU times as
+decimal HHMM values, so this profile intentionally keeps decimal time decoding
+instead of adopting packed-byte decoding used by some older Deye firmware.
 
 ---
 
