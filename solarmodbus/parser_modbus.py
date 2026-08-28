@@ -1,12 +1,21 @@
 import logging
 _LOGGER = logging.getLogger(__name__)
 
+
 class ModbusValueParser:
     def __init__(self, definition: dict):
         self.definition = definition
 
-    def _to_signed_16(self, v: int) -> int:
-        return v - 65536 if v > 32767 else v
+    @staticmethod
+    def _combine_registers(values: list[int]) -> int:
+        """Combine Solarman-ordered registers, with the low word listed first."""
+        return sum((value & 0xFFFF) << (index * 16) for index, value in enumerate(values))
+
+    @staticmethod
+    def _to_signed(value: int, register_count: int) -> int:
+        bits = register_count * 16
+        sign_bit = 1 << (bits - 1)
+        return value - (1 << bits) if value & sign_bit else value
 
     def apply_customrule(self, value, rule):
         if rule == "hhmm":
@@ -37,21 +46,11 @@ class ModbusValueParser:
         rule = item.get("rule", 1)
         customrule = item.get("customrule", None)
 
-        if rule == 1:
-            val = values[0]
+        if rule in (1, 3):
+            val = self._combine_registers(values)
 
-        elif rule == 2:
-            val = self._to_signed_16(values[0])
-
-        elif rule == 3:
-            val = 0
-            for v in values:
-                val = (val << 16) | v
-
-        elif rule == 4:
-            if len(values) < 2:
-                raise ValueError("Rule 4 requires 2 registers")
-            val = (values[1] << 16) | values[0]
+        elif rule in (2, 4):
+            val = self._to_signed(self._combine_registers(values), len(values))
 
         elif rule == 5:
             chars = []

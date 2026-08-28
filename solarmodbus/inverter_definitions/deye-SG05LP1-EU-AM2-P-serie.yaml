@@ -1,3 +1,6 @@
+# Core telemetry in this SG05LP1 map has also been validated read-only on a
+# Deye SUN-6K-SG05LP1-EU-SM2-P. Keep this filename for existing config entries;
+# AM2/SM2 differences outside the validated registers must be verified first.
 requests:
   - start: 0x0003
     end: 0x0070
@@ -50,6 +53,7 @@ parameters:
 
     - name: "PV1 Current"
       class: "current"
+      state_class: "measurement"
       uom: "A"
       scale: 0.1
       rule: 1
@@ -67,7 +71,7 @@ parameters:
 
     - name: "Daily Production"
       class: "energy"
-      state_class: "measurement"
+      state_class: "total_increasing"
       uom: "kWh"
       scale: 0.1
       rule: 1
@@ -79,16 +83,16 @@ parameters:
       state_class: "total_increasing"
       uom: "kWh"
       scale: 0.1
-      rule: 1
+      rule: 3
       registers: [0x0060,0x0061]
       icon: 'mdi:solar-power'
 
-    - name: "Micro-inverter Power"
+    - name: "AUX Port Power"
       class: "power"
       state_class: "measurement"
       uom: "W"
       scale: 1
-      rule: 1
+      rule: 2
       registers: [0x00A6]
       icon: 'mdi:solar-power'
 
@@ -169,7 +173,7 @@ parameters:
     - name: "Battery Temperature"
       class: "temperature"
       state_class: "measurement"
-      uom: "Â°C"
+      uom: "°C"
       scale: 0.1
       rule: 1
       offset: 1000      
@@ -181,7 +185,8 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x01
       registers: [0x00E8]
       isstr: true
       lookup:
@@ -219,23 +224,6 @@ parameters:
       rule: 1
       registers: [0x00A0]
       icon: 'mdi:current-ac'
-    - name: "Grid Voltage L2"
-      class: "voltage"
-      state_class: "measurement"
-      uom: "V"
-      scale: 0.1
-      rule: 1
-      registers: [0x0097]
-      icon: 'mdi:transmission-tower'
-
-    - name: "Grid Current L2"
-      class: "current"
-      state_class: "measurement"
-      uom: "A"
-      scale: 0.01
-      rule: 1
-      registers: [0x00A1]
-      icon: 'mdi:current-ac'
       
     - name: "Internal CT L1 Power"
       class: "power"
@@ -244,15 +232,6 @@ parameters:
       scale: 1
       rule: 2
       registers: [0x00A7]
-      icon: 'mdi:transmission-tower'
-
-    - name: "Internal CT L2 Power"
-      class: "power"
-      state_class: "measurement"
-      uom: "W"
-      scale: 1
-      rule: 2
-      registers: [0x00A8]
       icon: 'mdi:transmission-tower'
 
     - name: "External CT L1 Power"
@@ -264,15 +243,6 @@ parameters:
       registers: [0x00AA]
       icon: 'mdi:transmission-tower'
       
-    - name: "External CT L2 Power"
-      class: "power"
-      state_class: "measurement"
-      uom: "W"
-      scale: 1
-      rule: 2
-      registers: [0x00AB]
-      icon: 'mdi:transmission-tower'
-
     - name: "Daily Energy Bought"
       class: "energy"
       state_class: "total_increasing"
@@ -287,7 +257,7 @@ parameters:
       state_class: "total_increasing"
       uom: "kWh"
       scale: 0.1
-      rule: 1
+      rule: 3
       registers: [0x004E,0x0050]
       icon: 'mdi:transmission-tower-export'
       
@@ -310,12 +280,12 @@ parameters:
       icon: 'mdi:transmission-tower-import'
 
 
-    - name: "Total Grid Production"
+    - name: "Total Active Energy"
       class: "energy"
       state_class: "total_increasing"
       uom: "kWh"
       scale: 0.1
-      rule: 4
+      rule: 3
       registers: [0x003F,0x0040]
       icon: 'mdi:transmission-tower'
 
@@ -337,15 +307,6 @@ parameters:
       scale: 1
       rule: 1
       registers: [0x00B0]
-      icon: 'mdi:lightning-bolt-outline'
-
-    - name: "Load L2 Power"
-      class: "power"
-      state_class: "measurement"      
-      uom: "W"
-      scale: 1
-      rule: 1
-      registers: [0x00B1]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Load Voltage"
@@ -375,19 +336,17 @@ parameters:
       registers: [0x0055,0x0056]
       icon: 'mdi:lightning-bolt-outline'
 
-    - name: "SmartLoad Enable Status"
+    # Register 0x00C3 is a model-dependent AUX/alternator status bitfield, not
+    # the 0/1 SmartLoad flag previously declared here. Preserve it only as a
+    # diagnostic raw value until its SM2-P bits are validated independently.
+    - name: "AUX Status Raw"
       class: ""
-      state_class: ""      
+      state_class: ""
       uom: ""
       scale: 1
       rule: 1
       registers: [0x00C3]
-      isstr: true
-      lookup: 
-      -  key: 0
-         value: "OFF"
-      -  key: 1
-         value: "ON"
+      category: "diagnostic"
       icon: 'mdi:lightning-bolt-outline'
 
  - group: Inverter
@@ -412,10 +371,12 @@ parameters:
           value: "Alarm"
         - key: 4
           value: "Fault"
+        - key: 5
+          value: "Activating"
         - key: default
           value: "Unknown"
 
-    - name: "Total Power"
+    - name: "Inverter Output Power"
       class: "power"
       state_class: "measurement"      
       uom: "W"
@@ -442,14 +403,6 @@ parameters:
       registers: [0x00A4]
       icon: 'mdi:home-lightning-bolt'
 
-    - name: "Current L2"
-      class: "current"
-      uom: "A"
-      scale: 0.01
-      rule: 2
-      registers: [0x00A5]
-      icon: 'mdi:home-lightning-bolt'
-
     - name: "Inverter L1 Power"
       class: "power"
       state_class: "measurement"      
@@ -459,17 +412,8 @@ parameters:
       registers: [0x00AD]
       icon: 'mdi:home-lightning-bolt'
 
-    - name: "Inverter L2 Power"
-      class: "power"
-      state_class: "measurement"      
-      uom: "W"
-      scale: 1
-      rule: 2
-      registers: [0x00AE]
-      icon: 'mdi:home-lightning-bolt'
-      
     - name: "Load Frequency"
-      class: ""
+      class: "frequency"
       state_class: "measurement"      
       uom: "Hz"
       scale: 0.01
@@ -477,10 +421,19 @@ parameters:
       registers: [0x00C0]
       icon: 'mdi:sine-wave'
 
+    - name: "Inverter Frequency"
+      class: "frequency"
+      state_class: "measurement"
+      uom: "Hz"
+      scale: 0.01
+      rule: 1
+      registers: [0x00C1]
+      icon: 'mdi:sine-wave'
+
     - name: "DC Temperature"
       class: "temperature"
       state_class: "measurement"      
-      uom: "Â°C"
+      uom: "°C"
       scale: 0.1
       rule: 2
       offset: 1000      
@@ -490,7 +443,7 @@ parameters:
     - name: "AC Temperature"
       class: "temperature"
       state_class: "measurement"      
-      uom: "Â°C"
+      uom: "°C"
       scale: 0.1
       rule: 2
       offset: 1000      
@@ -537,28 +490,6 @@ parameters:
          value: "Off-Grid"
       -  key: 1
          value: "On-Grid"
-
-    - name: "Gen-connected Status"
-      class: ""
-      uom: ""
-      state_class: ""      
-      scale: 1
-      rule: 1
-      registers: [0x00A6]
-      isstr: true
-      lookup: 
-      -  key: 0
-         value: "none"
-      -  key: 1
-         value: "On"
-
-    - name: "Gen Power"
-      class: "power"
-      state_class: "measurement"      
-      uom: "W"
-      scale: 1
-      rule: 1
-      registers: [0x00A6]
 
  - group: Alert
    items: 
@@ -618,7 +549,8 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x01
       registers: [0x00F7]
       isstr: true
       lookup:
@@ -629,18 +561,18 @@ parameters:
       icon: "mdi:solar-power"
 
     - name: "Max Sell Power"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x00F5]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Max Solar Power"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0035]
@@ -651,7 +583,8 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x01
       writerule: enum_write
       registers: [0x00F3]
       isstr: true
@@ -663,9 +596,9 @@ parameters:
       icon: "mdi:home-lightning-bolt"
 
     - name: "Zero export power"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x00CE]
@@ -678,22 +611,39 @@ parameters:
  - group: Time of Use
    items:
 
+    - name: "Time of Use Enabled"
+      class: ""
+      state_class: ""
+      uom: ""
+      scale: 1
+      rule: 6
+      mask: 0x01
+      registers: [0x00F8]
+      isstr: true
+      lookup:
+      -  key: 0
+         value: "Disabled"
+      -  key: 1
+         value: "Enabled"
+      icon: 'mdi:timer-cog-outline'
+
     - name: "Time of Use 1 Grid Charge"
       class: ""
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0112]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -702,17 +652,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0112]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
@@ -721,17 +672,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0113]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -740,17 +692,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0113]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
@@ -759,17 +712,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0114]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -778,17 +732,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0114]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
@@ -797,17 +752,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0115]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -816,17 +772,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0115]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
@@ -835,17 +792,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0116]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -854,17 +812,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0116]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
@@ -873,17 +832,18 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0117]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Enabled"
-      -  key: 6
+      -  key: 2
          value: "Disabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:transmission-tower"
 
@@ -892,20 +852,23 @@ parameters:
       state_class: ""
       uom: ""
       scale: 1
-      rule: 1
+      rule: 6
+      mask: 0x03
       registers: [0x0117]
       isstr: true
       lookup:
-      -  key: 4
+      -  key: 0
          value: "Disabled"
-      -  key: 5
+      -  key: 1
          value: "Disabled"
-      -  key: 6
+      -  key: 2
          value: "Enabled"
-      -  key: 7
+      -  key: 3
          value: "Enabled"
       icon: "mdi:generator-portable"
 
+    # Live SM2-P values are decimal HHMM (for example 100 = 01:00), unlike
+    # older Deye firmware that reports packed hour/minute bytes.
     - name: "Time of Use Time 1"
       class: ""
       state_class: ""
@@ -973,54 +936,54 @@ parameters:
       icon: 'mdi:timelapse'
 
     - name: "Time of Use Power 1"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0100]
       icon: "mdi:lightning-bolt-outline"
 
     - name: "Time of Use Power 2"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0101]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Time of Use Power 3"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0102]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Time of Use Power 4"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0103]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Time of Use Power 5"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0104]
       icon: 'mdi:lightning-bolt-outline'
 
     - name: "Time of Use Power 6"
-      class: ""
+      class: "power"
       state_class: ""
-      uom: ""
+      uom: "W"
       scale: 1
       rule: 1
       registers: [0x0105]
@@ -1029,7 +992,7 @@ parameters:
     - name: "Time of Use SOC 1"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x010C]
@@ -1038,7 +1001,7 @@ parameters:
     - name: "Time of Use SOC 2"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x010D]
@@ -1047,7 +1010,7 @@ parameters:
     - name: "Time of Use SOC 3"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x010E]
@@ -1056,7 +1019,7 @@ parameters:
     - name: "Time of Use SOC 4"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x010F]
@@ -1065,7 +1028,7 @@ parameters:
     - name: "Time of Use SOC 5"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x0110]
@@ -1074,7 +1037,7 @@ parameters:
     - name: "Time of Use SOC 6"
       class: ""
       state_class: ""
-      uom: ""
+      uom: "%"
       scale: 1
       rule: 1
       registers: [0x0111]
