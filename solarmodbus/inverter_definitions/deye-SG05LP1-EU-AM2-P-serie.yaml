@@ -464,8 +464,8 @@ parameters:
       state_class: ""      
       uom: ""
       scale: 1
-      rule: 1
-      registers: [0x000E]
+      rule: 7
+      registers: [0x000E,0x000A]
       isstr: true
 
     - name: "Control Board Version No."
@@ -473,8 +473,8 @@ parameters:
       state_class: ""      
       uom: ""
       scale: 1
-      rule: 1
-      registers: [0x000D]
+      rule: 7
+      registers: [0x000D,0x000C,0x000B]
       isstr: true
 
     - name: "Grid-connected Status"

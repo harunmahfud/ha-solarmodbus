@@ -62,6 +62,32 @@ class ModbusValueParserTests(unittest.TestCase):
 
         self.assertEqual(self.parser.parse_item(item, {100: 0b0101}), "Enabled")
 
+    def test_rule_7_formats_complete_deye_firmware_versions(self):
+        raw_registers = {
+            0x000A: 0x0000,
+            0x000B: 0x1516,
+            0x000C: 0x0000,
+            0x000D: 0x4388,
+            0x000E: 0xC382,
+        }
+        communication = {
+            "name": "Communication Board Version No.",
+            "registers": [0x000E, 0x000A],
+            "rule": 7,
+        }
+        control = {
+            "name": "Control Board Version No.",
+            "registers": [0x000D, 0x000C, 0x000B],
+            "rule": 7,
+        }
+
+        self.assertEqual(
+            self.parser.parse_item(communication, raw_registers), "C382-0000"
+        )
+        self.assertEqual(
+            self.parser.parse_item(control, raw_registers), "4388-0000-1516"
+        )
+
     def test_decimal_hhmm_custom_rule_matches_live_sm2_values(self):
         item = {
             "name": "Time of Use",
