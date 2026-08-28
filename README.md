@@ -49,6 +49,63 @@ Both methods are fully supported.
 
 ---
 
+## ⚠️ Deye lifetime-energy correction
+
+Older releases decoded Solarman multi-register values with the 16-bit words in
+the wrong order. Deye lifetime counters could consequently report millions of
+kWh instead of hundreds. The correct Solarman convention lists the low word
+first; for two registers the decoded value is:
+
+```text
+raw = low_word + (high_word × 65536)
+```
+
+The corrected parser also reads every register in a multi-register `rule: 1`
+value instead of silently ignoring all but the first one.
+
+### Home Assistant statistics migration
+
+The integration deliberately does not rewrite Home Assistant's recorder or
+long-term statistics. After upgrading, affected `total_increasing` entities
+will drop from the old invalid value to the corrected inverter value. Home
+Assistant treats that decrease as a new meter cycle, but previously recorded
+states and statistic sums can still contain invalid energy.
+
+Before upgrading, back up Home Assistant. After the first corrected poll,
+review these entities under **Developer Tools → Statistics** and repair or
+remove their invalid historical statistics as appropriate:
+
+- Total Battery Charge
+- Total Battery Discharge
+- Total Energy Sold
+- Total Load Consumption
+- Total Production and Total Energy Bought if their high word was non-zero
+
+Also verify any Energy Dashboard configuration that uses these entities. Do
+not edit the recorder database directly without a tested backup and a separate
+migration plan.
+
+### SG05LP1 entity changes
+
+Register `0x00A6` is signed AUX-port power, not a generator-connected Boolean.
+The duplicate **Micro-inverter Power**, **Gen Power**, and invalid
+**Gen-connected Status** entities are replaced by **AUX Port Power**. Register
+`0x00C3` is a model-dependent status bitfield, so the incorrect 0/1
+**SmartLoad Enable Status** is replaced by the diagnostic **AUX Status Raw**.
+Update dashboards or automations that referenced the removed entity IDs.
+
+### SG05LP1 SM2-P compatibility
+
+The core telemetry and energy registers in
+`deye-SG05LP1-EU-AM2-P-serie.yaml` were validated read-only on a
+`SUN-6K-SG05LP1-EU-SM2-P`. The existing filename is retained because Home
+Assistant config entries store it and the loader has no profile inheritance;
+renaming it or adding a full duplicate would either break existing entries or
+create two definitions that can drift. Model-dependent AUX/SmartLoad status
+remains a raw diagnostic value until its individual bits are verified.
+
+---
+
 ## 📌 Overview
 
 **solarmodbus** is a fully local Home Assistant integration designed to read, decode, and expose Modbus TCP data from hybrid inverters compatible with the *Solarman* ecosystem.
