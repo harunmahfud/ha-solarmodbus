@@ -101,6 +101,15 @@ renamed **Inverter Output Power**. TOU grid/generator charge entities retain
 their names but now inspect only the documented low two source bits, so other
 mode flags no longer corrupt their state.
 
+#### Cleaning up stale Home Assistant entities
+
+Home Assistant can retain removed entity-registry entries as unavailable after
+an upgrade. First migrate any dashboards and automations, then go to
+**Settings → Devices & services → Entities**, filter for the Solarmodbus device,
+and delete unavailable legacy L2, generator, SmartLoad, Micro-inverter Power,
+Total Grid Production, and Total Power entries. Do not delete current entities
+that are only temporarily unavailable during an integration reload.
+
 ### SG05LP1 SM2-P compatibility
 
 The core telemetry and energy registers in
@@ -116,6 +125,21 @@ register, and remain within the 125-register Modbus limit: 3–112 (110),
 150–249 (100), and 250–279 (30). The SM2-P hardware returned TOU times as
 decimal HHMM values, so this profile intentionally keeps decimal time decoding
 instead of adopting packed-byte decoding used by some older Deye firmware.
+
+Firmware versions are four-nibble uppercase fields. The complete communication
+version is ordered as registers `0x000E, 0x000A`, and the control version as
+`0x000D, 0x000C, 0x000B`, preserving each field's four characters. Observed
+values therefore decode as `C382-0000` and `4388-0000-1516`, rather than the
+previous decimal `50050` and `17288`.
+
+Read-only validation also found plausible TOU voltage targets at
+`0x0106`–`0x010B`, weekday flags in `0x00F8`, and additional program mode/sell
+bits in `0x0112`–`0x0117`. They remain unexposed until their desired Home
+Assistant behavior is defined. Community maps disagree on signedness for grid
+current `0x00A0` and load powers `0x00B0`/`0x00B2`; the tested device did not
+produce negative values, so this profile deliberately leaves those mappings
+unchanged. Register `0x00C3` remains raw rather than restoring unverified
+SmartLoad or generator meanings.
 
 ---
 
