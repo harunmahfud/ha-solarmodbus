@@ -63,6 +63,9 @@ class ModbusValueParser:
             mask = item.get("mask", 1)
             val = values[0] & mask
 
+        elif rule == 7:
+            val = "-".join(f"{value & 0xFFFF:04X}" for value in values)
+
         elif rule == 9:
             raw = values[0]
             hours = (raw >> 8) & 0xFF
