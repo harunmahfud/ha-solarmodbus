@@ -47,6 +47,31 @@ class ModbusValueParserTests(unittest.TestCase):
     def test_scale_is_applied_after_combining_registers(self):
         self.assertEqual(self.parse([1783, 0], rule=3, scale=0.1), 178.3)
 
+    def test_rule_6_masks_status_bits_before_lookup(self):
+        item = {
+            "name": "Grid charge",
+            "register": 100,
+            "rule": 6,
+            "mask": 0x03,
+            "isstr": True,
+            "lookup": [
+                {"key": 0, "value": "Disabled"},
+                {"key": 1, "value": "Enabled"},
+            ],
+        }
+
+        self.assertEqual(self.parser.parse_item(item, {100: 0b0101}), "Enabled")
+
+    def test_decimal_hhmm_custom_rule_matches_live_sm2_values(self):
+        item = {
+            "name": "Time of Use",
+            "register": 100,
+            "rule": 1,
+            "customrule": "hhmm",
+        }
+
+        self.assertEqual(self.parser.parse_item(item, {100: 500}), "05:00")
+
     def test_observed_deye_lifetime_counters_decode_correctly(self):
         observed = {
             "battery_charge": ([1794, 0], 179.4),
